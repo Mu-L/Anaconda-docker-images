@@ -1,7 +1,11 @@
-FROM amazonlinux:2
+FROM amazonlinux:2.0.20250201.0@sha256:b1b123fdcccab612861866f6e6d10823b2aee22357f10f27a66044207ccc3c89
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH=/opt/conda/bin:$PATH
+
+# renovate: datasource=custom.anaconda_installer
+ARG INSTALLER_URL="https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-aarch64.sh"
+ARG SHA256SUM="489c608e8bddd2cf29dfbdd811cf99087cd6b6a0615d41c6f9058ce340594b65"
 
 # hadolint ignore=DL3008
 # hadolint ignore=DL3033
@@ -25,9 +29,11 @@ RUN yum install -y \
         subversion && \
     yum clean all && \
     rm -rf /var/cache/yum && \
-    wget --quiet https://repo.anaconda.com/archive/Anaconda3-2024.02-1-Linux-aarch64.sh -O ~/anaconda.sh && \
-    /bin/bash ~/anaconda.sh -b -p /opt/conda && \
-    rm ~/anaconda.sh && \
+    wget --quiet ${INSTALLER_URL} -O anaconda.sh && \
+    echo "${SHA256SUM} anaconda.sh" > shasum && \
+    sha256sum --check --status shasum && \
+    /bin/bash anaconda.sh -b -p /opt/conda && \
+    rm anaconda.sh shasum && \
     ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
     echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
     echo "conda activate base" >> ~/.bashrc && \

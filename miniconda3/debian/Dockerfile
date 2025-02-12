@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:12.9-slim@sha256:40b107342c492725bc7aacbe93a49945445191ae364184a6d24fedb28172f6f7
 
 LABEL maintainer="Anaconda, Inc"
 
@@ -22,28 +22,36 @@ RUN apt-get update -q && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PATH /opt/conda/bin:$PATH
+ENV PATH=/opt/conda/bin:$PATH
 
 CMD [ "/bin/bash" ]
 
 # Leave these args here to better use the Docker build cache
-ARG CONDA_VERSION=py311_24.1.2-0
+# renovate: datasource=custom.miniconda_installer
+ARG INSTALLER_URL_LINUX64="https://repo.anaconda.com/miniconda/Miniconda3-py312_25.1.1-2-Linux-x86_64.sh"
+ARG SHA256SUM_LINUX64="4766d85b5f7d235ce250e998ebb5a8a8210cbd4f2b0fea4d2177b3ed9ea87884"
+# renovate: datasource=custom.miniconda_installer
+ARG INSTALLER_URL_S390X="https://repo.anaconda.com/miniconda/Miniconda3-py312_25.1.1-2-Linux-s390x.sh"
+ARG SHA256SUM_S390X="55c681937c27e13a8ed818d1fec182e623e0308fffc1b10605896dac15f90077"
+# renovate: datasource=custom.miniconda_installer
+ARG INSTALLER_URL_AARCH64="https://repo.anaconda.com/miniconda/Miniconda3-py312_25.1.1-2-Linux-aarch64.sh"
+ARG SHA256SUM_AARCH64="6d05b9f9b7f327b90797a4cf56d68c81578bab2f63257a3e7a8b72cb0f0e4b5d"
 
 RUN set -x && \
     UNAME_M="$(uname -m)" && \
     if [ "${UNAME_M}" = "x86_64" ]; then \
-        MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh"; \
-        SHA256SUM="3f2e5498e550a6437f15d9cc8020d52742d0ba70976ee8fce4f0daefa3992d2e"; \
+        INSTALLER_URL="${INSTALLER_URL_LINUX64}"; \
+        SHA256SUM="${SHA256SUM_LINUX64}"; \
     elif [ "${UNAME_M}" = "s390x" ]; then \
-        MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-s390x.sh"; \
-        SHA256SUM="0489909051fd9e2c9addfa5fbd531ccb7f8f2463ac47376b8854e5a09b1c4011"; \
+        INSTALLER_URL="${INSTALLER_URL_S390X}"; \
+        SHA256SUM="${SHA256SUM_S390X}"; \
     elif [ "${UNAME_M}" = "aarch64" ]; then \
-        MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh"; \
-        SHA256SUM="1e046ef2d9d47289db2491f103c81b0b4baf943a9234ac59bd5bca076c881d98"; \
+        INSTALLER_URL="${INSTALLER_URL_AARCH64}"; \
+        SHA256SUM="${SHA256SUM_AARCH64}"; \
     fi && \
-    wget "${MINICONDA_URL}" -O miniconda.sh -q && \
+    wget "${INSTALLER_URL}" -O miniconda.sh -q && \
     echo "${SHA256SUM} miniconda.sh" > shasum && \
-    if [ "${CONDA_VERSION}" != "latest" ]; then sha256sum --check --status shasum; fi && \
+    sha256sum --check --status shasum && \
     mkdir -p /opt && \
     bash miniconda.sh -b -p /opt/conda && \
     rm miniconda.sh shasum && \
